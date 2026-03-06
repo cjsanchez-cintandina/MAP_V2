@@ -82,7 +82,7 @@ urlpatterns = [
     path('entrega/', views.formulario_entrega, name='formulario_entrega'),
     path('api/solicitud_por_rango/', views.solicitud_por_rango, name='solicitud_por_rango'),
     path("buscar-nit/", views.buscar_nit, name="buscar_nit"),
-    path('<slug:cliente_slug>/', views.cargar_template_cliente, name='template_cliente'),
+    path('<slug:cliente_slug>/', views.crear_template_cliente, name='template_cliente'),
 
 
 ]

@@ -744,26 +744,25 @@ logger = logging.getLogger('storages')
 
 @transaction.atomic
 def crear_solicitud(request):
-
     serial_qr = request.GET.get("serial")
     ocultar_menu = False
-
-    # Si viene desde QR
     if serial_qr:
         ocultar_menu = True
     else:
-        # Si NO viene desde QR → exigir login
         if not request.user.is_authenticated:
             return redirect("login")
 
     if request.method == 'POST':
-
-        print("=== POST DATA UBICACIONES ===", flush=True)
-        for key, value in request.POST.items():
-            print(f"  {key}: '{value}'", flush=True)
-        print("=== FIN ===", flush=True)
-
-        form = SolicitudForm(request.POST, request.FILES)
+        solicitud_id = request.POST.get('solicitud_id')
+        
+        if solicitud_id:
+            solicitud_existente = get_object_or_404(Solicitud, id=solicitud_id)
+       
+            data = request.POST.copy()
+            data['codigo'] = solicitud_existente.codigo
+            form = SolicitudForm(data, request.FILES, instance=solicitud_existente)
+        else:
+            form = SolicitudForm(request.POST, request.FILES)
 
         if form.is_valid():
             solicitud = form.save(commit=False)
@@ -1125,45 +1124,37 @@ def formulario_entrega(request):
 
 
 #buscar nit para autocompletar datos en el formulario de entrega
-def buscar_nit(request):
-    nit = request.GET.get("nit")
 
+def buscar_nit(request):
+    nit = request.GET.get('nit', '').strip()
     if not nit:
-        return JsonResponse({"existe": False})
+        return JsonResponse({'existe': False})
 
     try:
-        solicitud = Solicitud.objects.get(nit=nit)
+        solicitud = Solicitud.objects.filter(nit=nit).latest('id')
+        
+        ubicaciones = []
+        for ub in solicitud.ubicaciones.all():
+            ubicaciones.append({
+                'direccion': ub.direccion or '',
+                'telefono':  ub.telefono  or '',
+                'ciudad':    ub.ciudad    or '',
+            })
 
-        data = {
-            "existe": True,
-            "razon_social": solicitud.razon_social,
-            "correo": solicitud.correo,
-            "pagina_web": solicitud.pagina_web,
-            "celular": solicitud.celular,
-        }
+        return JsonResponse({
+            'existe':         True,
+            'codigo':         solicitud.codigo           or '',  # ← nuevo
+            'solicitud_id':   solicitud.id,                      # ← nuevo
+            'razon_social':   solicitud.razon_social     or '',
+            'correo':         solicitud.correo           or '',
+            'pagina_web':     solicitud.pagina_web       or '',
+            'celular':        solicitud.celular          or '',
+            'sobre_nosotros': solicitud.sobre_nosotros   or '',
+            'link_adicional': solicitud.link_adicional   or '',
+            'logo_url': (lambda: solicitud.logo.url if solicitud.logo and str(solicitud.logo) else '')(),
+            'logo_nombre':    solicitud.logo.name.split('/')[-1] if solicitud.logo else '',
+            'ubicaciones':    ubicaciones,
+        })
 
     except Solicitud.DoesNotExist:
-        data = {"existe": False}
-
-    return JsonResponse(data)
-
-def cargar_template_cliente(request, cliente_slug):
-    """
-    Carga el template asociado al cliente.
-    """
-
-    cliente = get_object_or_404(Cliente, slug=cliente_slug)
-
-    template_cliente = TemplateCliente.objects.filter(cliente=cliente).first()
-
-    if not template_cliente:
-        raise Http404("El cliente no tiene template asignado")
-
-    template_name = template_cliente.template_html
-
-    form = SolicitudForm()
-
-    return render(request, template_name, {
-        "form": form,
-        "cliente": cliente
-    })
+        return JsonResponse({'existe': False})

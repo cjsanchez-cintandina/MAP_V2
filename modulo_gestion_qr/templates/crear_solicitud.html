@@ -447,9 +447,42 @@ input, textarea, select {
       </div>
     </div>
 
+    <!-- Modal NIT ya registrado -->
+    <div id="modal-nit-registrado" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; background:rgba(0,0,0,0.6);">
+      <div style="background:white; border-radius:1rem; padding:2rem; width:90%; max-width:460px; margin:15vh auto; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center;">
+        
+        <!-- Ícono -->
+        <div class= "flex flex-col items-center justify-center" style="justify-center; margin-bottom:1rem;">
+          <img src="{% static 'images/assets/CHECK.svg' %}" alt="check" style="width:25px; height:25px;" class="object-contain shrink-0">
+        </div>
+
+        <!-- Título -->
+        <h3 style="font-size:1.1rem; font-weight:700; color:#348200; margin-bottom:0.75rem;">
+          Cliente ya registrado
+        </h3>
+
+        <!-- Mensaje -->
+        <p style="font-size:0.875rem; color:#374151; line-height:1.6; margin-bottom:1.5rem;">
+          Este cliente ya se encuentra registrado en nuestro sistema.<br>
+          Le solicitamos revisar los datos y confirmar su validez o actualizarlos en caso de requerirlo.
+        </p>
+
+        <!-- Botón cerrar -->
+        <button type="button" onclick="cerrarModalNitRegistrado()"
+          style="background:#348200; color:white; font-weight:600; padding:0.6rem 2rem; border-radius:0.6rem; border:none; cursor:pointer; font-size:0.875rem;"
+          onmouseover="this.style.backgroundColor='#7ca880'"
+          onmouseout="this.style.backgroundColor='#348200'">
+          Entendido
+        </button>
+
+      </div>
+    </div>
 
     <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 gap-6">
       {% csrf_token %}
+      <!-- ID oculto para saber si se edita una solicitud existente -->
+      <input type="hidden" id="solicitud-id-hidden" name="solicitud_id" value="">
+
       {{ form.non_field_errors }}
 
       <div class="flex flex-col items-center justify-center bg-white border px-4 py-2 min-w-0 text-center" style="border-radius: 1rem; border-color: #348200; gap: 2px;">
@@ -471,9 +504,13 @@ input, textarea, select {
       </div>
 
       <!-- Logo (subida de archivo) -->
-       
+        <div style="overflow: hidden;">
+         <span class="text-lg font-semibold text-gray-700">1. NIT</span>
+          {{ form.nit|add_class:"w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" }}
+        </div> 
+
         <div>
-        <span class="text-lg font-semibold text-gray-700">1. Imagen Empresarial:</span>
+        <span class="text-lg font-semibold text-gray-700">2. Imagen Empresarial:</span>
         <span class="text-lg text-gray-700">
           Adjunta el logo de tu empresa que se visualizará en la página.
         </span>
@@ -521,8 +558,16 @@ input, textarea, select {
               <span id="logo-punto-verde" style="display:none; color:#348200; font-weight:700; font-size:1rem;">✓</span>
               <img id="logo-img-icon" src="{% static 'images/assets/IMG_ICON.svg' %}" style="width:20px; height:22px; display:none;" class="object-contain shrink-0">
             </div>
-            <!-- Fila 2: nombre del archivo -->
-            <span id="logo-filename" class="text-sm text-gray-400 truncate" style="width:100%;">No se ha cargado ninguna imagen</span>
+            <!-- Fila 2: nombre del archivo y peso -->
+            <div class="flex flex-col">
+              <span id="logo-filename" style="font-size:0.875rem; color:#374151;">
+                  No se ha cargado ninguna imagen
+              </span>
+
+              <span id="logo-filesize" style="font-size:12px !important; color:#6B7280; margin-top:6px;">
+                  Formatos permitidos: PNG, JPG, JPEG (máximo 4MB).
+              </span>
+          </div>
             <!-- Fila 3: iconos de acción -->
             <div id="logo-acciones" class="flex items-center" style="gap:10px; display:none !important;">
               <button type="button" id="logo-preview-btn" class="logo-btn-icono" style="width:23px; height:23px; border:none; background:none;" onclick="abrirModalVista('')">
@@ -559,7 +604,7 @@ input, textarea, select {
     
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div style="overflow: hidden;">
-         <span class="text-lg font-semibold text-gray-700">2. Nombre empresarial:</span>
+         <span class="text-lg font-semibold text-gray-700">3. Nombre empresarial:</span>
           <span class="text-lg text-gray-700">
             Si no tienes la imagen de la marca, indica el nombre de tu empresa.
           </span>
@@ -571,7 +616,7 @@ input, textarea, select {
         </div>
 
          <div style="overflow: hidden;">
-          <span class="text-lg font-semibold text-gray-700">3. Sobre Nosotros:</span>
+          <span class="text-lg font-semibold text-gray-700">4. Sobre Nosotros:</span>
           <span class="text-lg text-gray-700">
             Texto corto sobre la empresa o información que el cliente quiera mostrar.
           </span>
@@ -579,14 +624,10 @@ input, textarea, select {
         </div>
 
         <div style="overflow: hidden;">
-          <span class="text-lg font-semibold text-gray-700">4. Razón Social:</span>
+          <span class="text-lg font-semibold text-gray-700">5. Razón Social:</span>
           {{ form.razon_social|add_class:"w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" }}
         </div>
-       
-        <div style="overflow: hidden;">
-         <span class="text-lg font-semibold text-gray-700">5. NIT</span>
-          {{ form.nit|add_class:"w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" }}
-        </div>
+
         <div style="overflow: hidden;">
           <span class="text-lg font-semibold text-gray-700">6. Sedes:</span>
           <span class="text-lg text-gray-700">Edita y añade varias sedes de tu empresa.</span>
@@ -942,30 +983,40 @@ document.addEventListener('DOMContentLoaded', function () {
         const tel = card.querySelector('[data-field="telefono"]').value.trim();
         const ciu = card.querySelector('[data-field="ciudad"]').value.trim();
 
-        
         document.getElementById('id_ubicaciones-0-direccion').value = dir;
         document.getElementById('id_ubicaciones-0-telefono').value = tel;
         document.getElementById('id_ubicaciones-0-ciudad').value = ciu;
 
-        vDir.textContent = dir ? `Dirección: ${dir}` : 'Sin dirección';
-        vDir.dataset.value = dir;
-        vDir.classList.toggle('text-gray-400', !dir);
-        vDir.classList.toggle('italic', !dir);
+        // ✅ CORRECCIÓN: definir vDir, vTel, vCiu antes de usarlos
+        const vDir = card.querySelector('.sede-view-direccion');
+        const vTel = card.querySelector('.sede-view-telefono');
+        const vCiu = card.querySelector('.sede-view-ciudad');
 
-        if (tel) {
-          vTel.textContent = `Número Celular: ${tel}`;
-          vTel.dataset.value = tel;
-          vTel.classList.remove('hidden');
-        } else {
-          vTel.classList.add('hidden');
+        if (vDir) {
+          vDir.textContent = dir ? `Dirección: ${dir}` : 'Sin dirección';
+          vDir.dataset.value = dir;
+          vDir.classList.toggle('text-gray-400', !dir);
+          vDir.classList.toggle('italic', !dir);
         }
 
-        if (ciu) {
-          vCiu.textContent = `Ciudad: ${ciu}`;
-          vCiu.dataset.value = ciu;
-          vCiu.classList.remove('hidden');
-        } else {
-          vCiu.classList.add('hidden');
+        if (vTel) {
+          if (tel) {
+            vTel.textContent = `Número Celular: ${tel}`;
+            vTel.dataset.value = tel;
+            vTel.classList.remove('hidden');
+          } else {
+            vTel.classList.add('hidden');
+          }
+        }
+
+        if (vCiu) {
+          if (ciu) {
+            vCiu.textContent = `Ciudad: ${ciu}`;
+            vCiu.dataset.value = ciu;
+            vCiu.classList.remove('hidden');
+          } else {
+            vCiu.classList.add('hidden');
+          }
         }
 
         viewEl.classList.remove('hidden');
@@ -1154,31 +1205,43 @@ document.addEventListener('DOMContentLoaded', function () {
   logoInput.addEventListener('change', function () {
     if (this.files && this.files[0]) {
       const file = this.files[0];
+
+      // ── Validación de tipo ──
+      const tiposPermitidos = ['image/png', 'image/jpeg']; // jpeg cubre jpg y jpeg
+      if (!tiposPermitidos.includes(file.type)) {
+        mostrarErrorLogo('Formato no permitido. Solo se aceptan PNG, JPG o JPEG.');
+        this.value = '';
+        return;
+      }
+
+      // ── Validación de tamaño (4 MB) ──
+      const maxBytes = 4 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        mostrarErrorLogo('El archivo supera el tamaño máximo permitido de 4 MB.');
+        this.value = '';
+        return;
+      }
+
+      // ── Limpiar error si todo está bien ──
+      limpiarErrorLogo();
+
       const objectURL = URL.createObjectURL(file);
 
-      // Mostrar nombre
       filenameSpan.textContent = file.name;
       filenameSpan.classList.remove('text-gray-400');
       filenameSpan.classList.add('text-gray-700', 'font-medium');
 
-      // Mostrar ícono de imagen
       if (logoImgIcon) logoImgIcon.style.display = 'block';
-
-      // Mostrar iconos
       if (logoAcciones) logoAcciones.style.setProperty('display', 'flex', 'important');
 
-      // Asignar URLs
       document.getElementById('logo-download').href = objectURL;
 
-      // Asignar URL al botón de vista
       const btnVista = document.getElementById('logo-preview-btn');
       if (btnVista) btnVista.setAttribute('onclick', `abrirModalVista('${objectURL}')`);
 
-      // Mostrar chilito verde
       const puntoVerde = document.getElementById('logo-punto-verde');
       if (puntoVerde) puntoVerde.style.display = 'inline-block';
 
-      // Deshabilitar campo nombre
       const campoNombre = document.getElementById('id_nombre_empresarial');
       if (campoNombre) {
         campoNombre.disabled = true;
@@ -1219,19 +1282,28 @@ if (modalInner) {
   modalInner.style.setProperty('border-radius', '1rem', 'important');
 }
 
+});
+
 // Validar antes de submit
 
 document.querySelector('form').addEventListener('submit', function(e) {
-   
+
+    // ── Validar autorización de datos ──
     const input = document.getElementById('id_acepta_tratamiento_datos');
     if (!input || !input.checked) {
         e.preventDefault();
         document.getElementById('error-acepto-datos').classList.remove('hidden');
         document.getElementById('btn-acepto-datos').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    // ── Si hay solicitud existente, redirigir a editar en lugar de crear ──
+    const solicitudId = document.getElementById('solicitud-id-hidden')?.value;
+    if (solicitudId) {
+        e.preventDefault();
+        window.location.href = `/solicitud/${solicitudId}/editar/`;
     }
 });
-
-}); 
 
 
 /* ===== Botones de funciones ===== */
@@ -1283,6 +1355,39 @@ function guardarWhatsapp() {
   btn.classList.add('activo');  
 
   cerrarModalWhatsapp();
+}
+
+function mostrarErrorLogo(mensaje) {
+  let errorEl = document.getElementById('logo-error-msg');
+  if (!errorEl) {
+    errorEl = document.createElement('p');
+    errorEl.id = 'logo-error-msg';
+    errorEl.style.cssText = 'color:#ef4444; font-size:0.75rem; margin-top:6px;';
+    // Insertar debajo del recuadro del logo
+    const recuadroLogo = document.getElementById('logo-filename')?.closest('.flex.items-stretch');
+    if (recuadroLogo) recuadroLogo.insertAdjacentElement('afterend', errorEl);
+  }
+  errorEl.textContent = mensaje;
+  errorEl.style.display = 'block';
+
+  // También resetear visualmente el recuadro
+  const filenameSpan = document.getElementById('logo-filename');
+  if (filenameSpan) {
+    filenameSpan.textContent = 'No se ha cargado ninguna imagen';
+    filenameSpan.classList.add('text-gray-400');
+    filenameSpan.classList.remove('text-gray-700', 'font-medium');
+  }
+  const logoImgIcon  = document.getElementById('logo-img-icon');
+  const logoAcciones = document.getElementById('logo-acciones');
+  const puntoVerde   = document.getElementById('logo-punto-verde');
+  if (logoImgIcon)  logoImgIcon.style.display  = 'none';
+  if (logoAcciones) logoAcciones.style.setProperty('display', 'none', 'important');
+  if (puntoVerde)   puntoVerde.style.display   = 'none';
+}
+
+function limpiarErrorLogo() {
+  const errorEl = document.getElementById('logo-error-msg');
+  if (errorEl) errorEl.style.display = 'none';
 }
 
 // Inicializar estado del botón entrega según el checkbox
@@ -1346,6 +1451,15 @@ function cerrarModalErrores(){
   document.getElementById("modal-errores").style.display = "none";
 }
 
+
+function abrirModalNitRegistrado() {
+  document.getElementById('modal-nit-registrado').style.display = 'block';
+}
+
+function cerrarModalNitRegistrado() {
+  document.getElementById('modal-nit-registrado').style.display = 'none';
+}
+
 document.addEventListener("DOMContentLoaded", function(){
 
   const hayErrores = {{ form.errors|yesno:"true,false" }} 
@@ -1357,27 +1471,102 @@ document.addEventListener("DOMContentLoaded", function(){
 
 });
 
-document.getElementById("id_nit").addEventListener("blur", function(){
+document.getElementById("id_nit").addEventListener("blur", function () {
+  const nit = this.value.trim();
+  if (!nit) return;
 
-    const nit = this.value;
-
-    if(!nit) return;
-
-    fetch(`/buscar-nit/?nit=${nit}`)
-    .then(response => response.json())
+  fetch(`/buscar-nit/?nit=${nit}`)
+    .then(r => r.json())
     .then(data => {
+      if (!data.existe) return;
 
-        if(data.existe){
+      // ── Precargar código y marcar solicitud existente ───
+      // (el código se genera automáticamente para nueva solicitud)
+      const hiddenId = document.getElementById('solicitud-id-hidden');
+      if (hiddenId) hiddenId.value = data.solicitud_id || '';
 
-            document.getElementById("id_razon_social").value = data.razon_social || "";
-            document.getElementById("id_correo").value = data.correo || "";
-            document.getElementById("id_pagina_web").value = data.pagina_web || "";
-            document.getElementById("id_celular").value = data.celular || "";
+      // ── Abrir modal de aviso ──
+      abrirModalNitRegistrado();
 
+      // ── Campos simples ──
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      };
+
+      setVal('id_nombre_empresarial', data.razon_social);  // Nombre empresarial (usa id_nombre_empresarial)
+      setVal('id_sobre_nosotros',     data.sobre_nosotros);
+      setVal('id_razon_social', data.razon_social);  
+      setVal('id_correo',             data.correo);
+      setVal('id_pagina_web',         data.pagina_web);
+      setVal('id_link_adicional',     data.link_adicional);
+
+
+          // ── Logo ──
+      if (data.logo_url) {
+        // Mostrar en el recuadro blanco
+        const filenameSpan = document.getElementById('logo-filename');
+        const logoImgIcon  = document.getElementById('logo-img-icon');
+        const logoAcciones = document.getElementById('logo-acciones');
+        const puntoVerde   = document.getElementById('logo-punto-verde');
+        const logoFilesize = document.getElementById('logo-filesize');
+        const btnVista     = document.getElementById('logo-preview-btn');
+        const logoDownload = document.getElementById('logo-download');
+
+        if (filenameSpan) {
+          filenameSpan.textContent = data.logo_nombre || 'Logo guardado';
+          filenameSpan.classList.remove('text-gray-400');
+          filenameSpan.classList.add('text-gray-700', 'font-medium');
         }
+        if (logoFilesize) logoFilesize.style.display = 'none';
+        if (logoImgIcon)  logoImgIcon.style.display  = 'block';
+        if (puntoVerde)   puntoVerde.style.display   = 'inline-block';
+        if (logoAcciones) logoAcciones.style.setProperty('display', 'flex', 'important');
+        if (btnVista)     btnVista.setAttribute('onclick', `abrirModalVista('${data.logo_url}')`);
+        if (logoDownload) logoDownload.href = data.logo_url;
 
-    });
+        // Deshabilitar nombre empresarial porque hay logo
+        const campoNombre = document.getElementById('id_nombre_empresarial');
+        if (campoNombre) {
+          campoNombre.disabled = true;
+          campoNombre.value = '';
+          campoNombre.placeholder = 'Se usará la imagen cargada';
+        }
+      }
 
+      // ── Sede principal (primera ubicación) ──
+      if (data.ubicaciones && data.ubicaciones.length > 0) {
+        const ub  = data.ubicaciones[0];
+        const card = document.querySelector('.sede-card[data-index="0"]');
+        if (card) {
+          const vDir = card.querySelector('.sede-view-direccion');
+          const vTel = card.querySelector('.sede-view-telefono');
+          const vCiu = card.querySelector('.sede-view-ciudad');
+
+          if (vDir && ub.direccion) {
+            vDir.textContent = `Dirección: ${ub.direccion}`;
+            vDir.dataset.value = ub.direccion;
+            vDir.classList.remove('text-gray-400', 'italic');
+          }
+          if (vTel && ub.telefono) {
+            vTel.textContent = `Número Celular: ${ub.telefono}`;
+            vTel.dataset.value = ub.telefono;
+            vTel.classList.remove('hidden');
+          }
+          if (vCiu && ub.ciudad) {
+            vCiu.textContent = `Ciudad: ${ub.ciudad}`;
+            vCiu.dataset.value = ub.ciudad;
+            vCiu.classList.remove('hidden');
+          }
+
+          // Sync con inputs ocultos del formset
+          document.getElementById('id_ubicaciones-0-direccion').value = ub.direccion || '';
+          document.getElementById('id_ubicaciones-0-telefono').value  = ub.telefono  || '';
+          document.getElementById('id_ubicaciones-0-ciudad').value    = ub.ciudad    || '';
+        }
+      }
+    })
+    .catch(err => console.error('Error buscando NIT:', err));
 });
 
 
